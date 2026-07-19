@@ -1,0 +1,80 @@
+# ==========================
+# Python
+# ==========================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.pyd
+
+# Virtual Environment
+.venv/
+
+# Environment Variables
+.env
+.env.*
+
+# ==========================
+# Dataset
+# ==========================
+data/
+datasets/
+
+# ==========================
+# Model Weights
+# ==========================
+*.pt
+*.pth
+*.onnx
+*.engine
+*.tflite
+*.pb
+
+# ==========================
+# Training Outputs
+# ==========================
+runs/
+logs/
+results/
+outputs/
+predictions/
+inference/
+
+# ==========================
+# Jupyter
+# ==========================
+.ipynb_checkpoints/
+
+# ==========================
+# IDE
+# ==========================
+.vscode/
+.idea/
+*.code-workspace
+
+# ==========================
+# OS Files
+# ==========================
+.DS_Store
+Thumbs.db
+
+# ==========================
+# Build / Distribution
+# ==========================
+build/
+dist/
+*.egg-info/
+
+# ==========================
+# Testing
+# ==========================
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ==========================
+# Misc
+# ==========================
+*.log
+*.tmp
+*.bak
