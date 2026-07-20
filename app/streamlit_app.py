@@ -63,7 +63,7 @@ def _sample_video_frames(uploaded_file, max_frames: int) -> list[tuple[str, Imag
     return frames
 
 
-def _get_detector(confidence_threshold: float = 0.4):
+def _get_detector(confidence_threshold: float = 0.25):
     return PPEDetector(conf_threshold=confidence_threshold)
 
 
@@ -202,7 +202,7 @@ def main() -> None:
                     detector=detector,
                     scenario=scenario,
                     weights=weights,
-                    overlap_threshold=0.05,
+                    overlap_threshold=0.03,
                 )
                 _render_frame_result(*results[0], scenario=scenario)
 
@@ -221,7 +221,7 @@ def main() -> None:
                     detector=detector,
                     scenario=scenario,
                     weights=weights,
-                    overlap_threshold=0.05,
+                    overlap_threshold=0.03,
                 )
                 _render_frame_result(*results[0], scenario=scenario)
 
@@ -240,7 +240,7 @@ def main() -> None:
                         detector=detector,
                         scenario=scenario,
                         weights=weights,
-                        overlap_threshold=0.05,
+                        overlap_threshold=0.03,
                     )
                     if len(results) > 1:
                         worst = max(results, key=lambda item: item[2].risk.normalized_score)

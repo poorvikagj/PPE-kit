@@ -20,13 +20,13 @@ PPE_REGION_FRACTIONS: dict[str, list[tuple[float, float, float, float]]] = {
 }
 
 PPE_VERIFY_THRESHOLDS: dict[str, float] = {
-    "helmet": 0.15,
-    "safety_goggles": 0.12,
-    "face_mask": 0.12,
-    "safety_vest": 0.15,
-    "lab_coat": 0.12,
-    "gloves": 0.10,
-    "safety_boots": 0.15,
+    "helmet": 0.08,
+    "safety_goggles": 0.06,
+    "face_mask": 0.06,
+    "safety_vest": 0.08,
+    "lab_coat": 0.06,
+    "gloves": 0.05,
+    "safety_boots": 0.08,
 }
 
 
@@ -113,7 +113,7 @@ def verify_worn(
     person_bbox: BBox,
     item_bbox: BBox,
     item_type: str,
-    threshold: float = 0.05,
+    threshold: float = 0.03,
 ) -> bool:
     """Return whether a PPE item is worn by a person using expected body regions."""
     threshold = PPE_VERIFY_THRESHOLDS.get(item_type, threshold)
@@ -123,7 +123,7 @@ def verify_worn(
 def assign_ppe_to_people(
     person_bboxes: list[BBox],
     detections: list[Detection],
-    threshold: float = 0.05,
+    threshold: float = 0.03,
 ) -> VerificationResult:
     """Assign PPE detections to the best matching person and mark worn state."""
     worn_by_person: dict[int, set[str]] = {index: set() for index in range(len(person_bboxes))}
@@ -135,6 +135,18 @@ def assign_ppe_to_people(
             continue
         if detection.class_name not in PPE_REGION_FRACTIONS:
             unassigned.append(detection)
+            continue
+
+        if not person_bboxes:
+            assignments.append(
+                Assignment(
+                    person_index=None,
+                    item_type=detection.class_name,
+                    detection=detection,
+                    overlap=1.0,
+                    worn=True,
+                )
+            )
             continue
 
         scored_people = [

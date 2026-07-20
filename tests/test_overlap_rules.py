@@ -44,3 +44,12 @@ def test_assigns_ppe_to_best_matching_person_only() -> None:
     assert result.worn_by_person[1] == {"helmet"}
     assert len(result.assignments) == 1
     assert result.assignments[0].person_index == 1
+
+
+def test_ppe_without_detected_person_defaults_to_worn() -> None:
+    detections = [Detection(1, "helmet", BBox(10, 10, 40, 40), 0.9)]
+
+    result = assign_ppe_to_people([], detections, threshold=0.03)
+
+    assert result.assignments[0].worn
+    assert result.assignments[0].person_index is None
