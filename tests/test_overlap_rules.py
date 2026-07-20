@@ -9,6 +9,13 @@ def test_helmet_overlapping_head_region_is_worn() -> None:
     assert verify_worn(person, helmet, "helmet", threshold=0.4)
 
 
+def test_helmet_with_large_box_still_counts_as_worn() -> None:
+    person = BBox(100, 100, 300, 500)
+    helmet = BBox(110, 95, 290, 190)
+
+    assert verify_worn(person, helmet, "helmet", threshold=0.4)
+
+
 def test_helmet_in_bottom_corner_is_not_worn() -> None:
     person = BBox(100, 100, 300, 500)
     helmet = BBox(105, 430, 165, 490)

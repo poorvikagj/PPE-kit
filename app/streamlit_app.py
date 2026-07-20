@@ -6,12 +6,9 @@ import logging
 import tempfile
 from pathlib import Path
 
-import av
 import cv2
-import numpy as np
 import streamlit as st
 from PIL import Image
-from streamlit_webrtc import VideoProcessorBase, WebRtcMode, webrtc_streamer
 
 from src.detection.detector import ModelUnavailableError, PPEDetector
 from src.pipeline import FrameResult, analyze_image
@@ -27,6 +24,14 @@ def _severity_color(severity: str) -> str:
     if severity in {"High Risk", "Critical Risk"}:
         return "#dc2626"
     return "#f59e0b"
+
+
+def _hex_to_bgr(color_hex: str) -> tuple[int, int, int]:
+    color_hex = color_hex.lstrip("#")
+    red = int(color_hex[0:2], 16)
+    green = int(color_hex[2:4], 16)
+    blue = int(color_hex[4:6], 16)
+    return blue, green, red
 
 
 def _load_image_from_upload(uploaded_file) -> Image.Image:
@@ -60,81 +65,6 @@ def _sample_video_frames(uploaded_file, max_frames: int) -> list[tuple[str, Imag
 
 def _get_detector(confidence_threshold: float = 0.4):
     return PPEDetector(conf_threshold=confidence_threshold)
-
-
-class LivePPEProcessor(VideoProcessorBase):
-    def __init__(
-        self,
-        detector,
-        scenario: dict,
-        weights: dict[str, float],
-        overlap_threshold: float,
-    ) -> None:
-        self.detector = detector
-        self.scenario = scenario
-        self.weights = weights
-        self.overlap_threshold = overlap_threshold
-        self.latest_result: FrameResult | None = None
-        self.latest_frame_name = "Live webcam"
-
-    def recv(self, frame: av.VideoFrame) -> av.VideoFrame:
-        image_bgr = frame.to_ndarray(format="bgr24")
-        image_rgb = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2RGB)
-        pil_image = Image.fromarray(image_rgb)
-        result = analyze_image(
-            pil_image,
-            self.detector,
-            self.scenario,
-            self.weights,
-            self.overlap_threshold,
-        )
-        self.latest_result = result
-
-        annotated = annotate_image(
-            image=pil_image,
-            detections=result.detections,
-            assignments=result.verification.assignments,
-            required_items=set(self.scenario.get("required", [])),
-            ignored_items=result.compliance.ignored,
-        )
-        annotated_bgr = cv2.cvtColor(np.array(annotated), cv2.COLOR_RGB2BGR)
-        warning_color = _severity_color(result.risk.severity)
-
-        overlay_height = 72
-        cv2.rectangle(annotated_bgr, (0, 0), (annotated_bgr.shape[1], overlay_height), (20, 20, 20), -1)
-        cv2.rectangle(
-            annotated_bgr,
-            (0, 0),
-            (annotated_bgr.shape[1], overlay_height),
-            tuple(int(warning_color.lstrip("#")[index : index + 2], 16) for index in (0, 2, 4)),
-            3,
-        )
-        cv2.putText(
-            annotated_bgr,
-            f"Risk: {result.risk.severity}  ({result.risk.normalized_score:.1f}/100)",
-            (18, 28),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.72,
-            (255, 255, 255),
-            2,
-            cv2.LINE_AA,
-        )
-        missing_text = ", ".join(item.replace("_", " ").title() for item in sorted(result.compliance.required_missing))
-        if not missing_text:
-            missing_text = "Missing PPE: None"
-        else:
-            missing_text = f"Missing PPE: {missing_text}"
-        cv2.putText(
-            annotated_bgr,
-            missing_text[:90],
-            (18, 56),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.55,
-            (255, 255, 255),
-            1,
-            cv2.LINE_AA,
-        )
-        return av.VideoFrame.from_ndarray(annotated_bgr, format="bgr24")
 
 
 def _analyze_named_image(
@@ -272,38 +202,28 @@ def main() -> None:
                     detector=detector,
                     scenario=scenario,
                     weights=weights,
-                    overlap_threshold=0.18,
+                    overlap_threshold=0.05,
                 )
                 _render_frame_result(*results[0], scenario=scenario)
 
     elif input_mode == "Webcam":
-        st.write("Live webcam PPE detection runs only in this tab.")
-        st.caption("The video stream is processed continuously and the risk warning is drawn on the live frame.")
-        webrtc_ctx = webrtc_streamer(
-            key="ppe-live-webcam",
-            mode=WebRtcMode.SENDRECV,
-            video_processor_factory=lambda: LivePPEProcessor(
-                detector=detector,
-                scenario=scenario,
-                weights=weights,
-                overlap_threshold=0.18,
-            ),
-            media_stream_constraints={"video": True, "audio": False},
-            async_processing=True,
-        )
-        if webrtc_ctx.video_processor and webrtc_ctx.video_processor.latest_result:
-            live_result = webrtc_ctx.video_processor.latest_result
-            severity_color = _severity_color(live_result.risk.severity)
-            st.markdown(
-                f"""
-                <div style="padding:0.8rem 1rem; border-radius:0.75rem; border-left:6px solid {severity_color}; background:#f8fafc; margin-top:1rem;">
-                  <div style="font-weight:700; color:{severity_color};">Live Risk: {live_result.risk.severity}</div>
-                  <div>Score: {live_result.risk.normalized_score:.1f}/100</div>
-                  <div>Missing PPE: {', '.join(item.replace('_', ' ').title() for item in sorted(live_result.compliance.required_missing)) or 'None'}</div>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
+        webcam_col, _ = st.columns([0.7, 1.3])
+        with webcam_col:
+            st.write("Take a photo from your webcam, then process it.")
+            webcam_image = st.camera_input("Take webcam photo", key="camera")
+        if st.button("Process webcam photo", type="primary", key="camera_run"):
+            if webcam_image is None:
+                st.warning("Take a photo from the webcam first.")
+            else:
+                image = _load_image_from_upload(webcam_image)
+                results = _process_inputs(
+                    inputs=[("Webcam capture", image)],
+                    detector=detector,
+                    scenario=scenario,
+                    weights=weights,
+                    overlap_threshold=0.05,
+                )
+                _render_frame_result(*results[0], scenario=scenario)
 
     else:
         uploaded_video = st.file_uploader("Upload a video", type=["mp4", "mov", "avi"], key="video")
@@ -320,16 +240,27 @@ def main() -> None:
                         detector=detector,
                         scenario=scenario,
                         weights=weights,
-                        overlap_threshold=0.18,
+                        overlap_threshold=0.05,
                     )
                     if len(results) > 1:
                         worst = max(results, key=lambda item: item[2].risk.normalized_score)
-                        col1, col2 = st.columns(2)
+                        col1, col2 = st.columns([1.9, 1])
                         col1.metric("Frames checked", len(results))
                         col2.metric(
                             "Worst frame risk",
                             worst[2].risk.severity,
                             f"{worst[2].risk.normalized_score:.1f}/100",
+                        )
+                        st.image(
+                            annotate_image(
+                                image=results[0][1],
+                                detections=results[0][2].detections,
+                                assignments=results[0][2].verification.assignments,
+                                required_items=set(scenario.get("required", [])),
+                                ignored_items=results[0][2].compliance.ignored,
+                            ),
+                            caption="Video preview frame",
+                            use_container_width=True,
                         )
                         selected_name = st.selectbox(
                             "Review frame",

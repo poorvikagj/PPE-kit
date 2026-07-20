@@ -7,8 +7,7 @@ numpy==2.2.6
 pandas==2.3.1
 Pillow==11.3.0
 PyYAML==6.0.2
-streamlit>=1.51.0
-streamlit-webrtc==0.76.2
+streamlit>=1.46.1
 pytest==8.4.1
 ruff==0.12.3
 black==25.1.0
