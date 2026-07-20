@@ -91,3 +91,6 @@ models/training_runs/*
 reports/inspection/*
 dev-server.out.log
 dev-server.err.log
+
+
+# .\.venv\Scripts\python.exe -m streamlit run app/streamlit_app.py
