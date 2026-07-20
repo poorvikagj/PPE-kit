@@ -55,6 +55,9 @@ class VerificationResult:
         worn: set[str] = set()
         for items in self.worn_by_person.values():
             worn.update(items)
+        for assignment in self.assignments:
+            if assignment.worn:
+                worn.add(assignment.item_type)
         return worn
 
 

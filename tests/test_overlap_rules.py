@@ -53,3 +53,4 @@ def test_ppe_without_detected_person_defaults_to_worn() -> None:
 
     assert result.assignments[0].worn
     assert result.assignments[0].person_index is None
+    assert result.all_worn_items == {"helmet"}
