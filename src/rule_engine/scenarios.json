@@ -1,0 +1,24 @@
+{
+  "construction": {
+    "display_name": "Construction Site",
+    "action_verb": "entering",
+    "required": ["helmet", "safety_vest", "safety_boots"],
+    "optional": ["gloves", "safety_goggles", "face_mask"],
+    "forbidden": ["lab_coat"]
+  },
+  "laboratory": {
+    "display_name": "Chemical Laboratory",
+    "action_verb": "entering",
+    "required": ["lab_coat", "gloves", "safety_goggles", "face_mask"],
+    "optional": ["safety_boots"],
+    "forbidden": ["helmet", "safety_vest"]
+  },
+  "welding": {
+    "display_name": "Welding Station",
+    "action_verb": "working at",
+    "required": ["safety_goggles", "gloves", "safety_boots", "face_mask"],
+    "optional": ["helmet", "safety_vest"],
+    "forbidden": ["lab_coat"]
+  }
+}
+

@@ -78,3 +78,16 @@ htmlcov/
 *.log
 *.tmp
 *.bak
+
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.venv/
+*.pyc
+
+models/weights/*.pt
+models/weights/*.onnx
+models/training_runs/*
+reports/inspection/*
+dev-server.out.log
+dev-server.err.log
